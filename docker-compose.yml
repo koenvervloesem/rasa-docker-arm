@@ -1,0 +1,12 @@
+version: '3.7'
+services:
+  rasa:
+    image: rasa:1.10.5
+    expose:
+      - 5005
+    ports:
+      - 5005:5005
+    volumes:
+      - ./:/app
+    command:
+      - run
