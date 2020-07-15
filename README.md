@@ -57,6 +57,7 @@ If you want to build a Docker image for another Rasa version than the ones suppo
 
 ```shell
 wget -O rasa-1.10.5.tar.gz https://github.com/RasaHQ/rasa/archive/1.10.5.tar.gz
+tar xzf rasa-1.10.5.tar.gz
 cp -r rasa-1.10.5 rasa-1.10.5-2
 # Make your changes in the `rasa-1.10.5-2` directory
 diff -ruN rasa-1.10.5 rasa-1.10.5-2 > patches/rasa-1.10.5-arm.patch
