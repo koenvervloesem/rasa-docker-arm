@@ -4,7 +4,7 @@ check:
 	./scripts/check_code.sh
 
 clean:
-	rm -r bazel
+	rm -r rasa-*
 
 dev_requirements:
 	./scripts/install_dev_requirements.sh
