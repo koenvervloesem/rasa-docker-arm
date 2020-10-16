@@ -1,0 +1,71 @@
+diff -ruN rasa-1.10.16/Dockerfile rasa-1.10.16-2/Dockerfile
+--- rasa-1.10.16/Dockerfile	2020-07-02 11:19:23.000000000 +0100
++++ rasa-1.10.16-2/Dockerfile	2020-07-05 10:24:18.777337692 +0100
+@@ -24,6 +24,13 @@
+   libffi-dev \
+   libpng-dev
+ 
++# Configure pip to use piwheels
++COPY pip.conf /etc
++# Download pre-built wheels for TensorFlow and TensorFlow Addons
++RUN mkdir /opt/wheels/ && \
++  wget -P /opt/wheels/ https://github.com/Qengineering/TensorFlow-Raspberry-Pi/raw/master/tensorflow-2.1.0-cp37-cp37m-linux_armv7l.whl && \
++  wget -P /opt/wheels/ https://github.com/koenvervloesem/tensorflow-addons-on-arm/releases/download/v0.7.1/tensorflow_addons-0.7.1-cp37-cp37m-linux_armv7l.whl
++
+ # install poetry
+ # keep this in sync with the version in pyproject.toml and Dockerfile
+ ENV POETRY_VERSION 1.0.3
+@@ -40,6 +47,7 @@
+ RUN python -m venv /opt/venv && \
+   . /opt/venv/bin/activate && \
+   pip install --no-cache-dir -U 'pip<20' && \
++  poetry update --no-dev && \
+   poetry install --no-dev --no-root --no-interaction && \
+   poetry build -f wheel -n && \
+   pip install --no-deps dist/*.whl && \
+@@ -51,13 +59,24 @@
+ # copy everything from /opt
+ COPY --from=builder /opt/venv /opt/venv
+ 
++# Install extra dependencies
++RUN apt-get install -y --no-install-recommends \
++  # For numpy
++  libatlas3-base libgfortran5 \
++  # For matplotlib
++  libfreetype6 \
++  # for scikit-learn
++  libgomp1 \
++  # For TensorFlow Addons
++  libatomic1
++
+ # make sure we use the virtualenv
+ ENV PATH="/opt/venv/bin:$PATH"
+ 
+ # update permissions & change user to not run as root
+ WORKDIR /app
+-RUN chgrp -R 0 /app && chmod -R g=u /app
+-USER 1001
++RUN chown -R 1000:1000 /app && chmod -R g=u /app
++USER 1000
+ 
+ # create a volume for temporary data
+ VOLUME /tmp
+diff -ruN rasa-1.10.16/pip.conf rasa-1.10.16-2/pip.conf
+--- rasa-1.10.16/pip.conf	1970-01-01 01:00:00.000000000 +0100
++++ rasa-1.10.16-2/pip.conf	2020-07-05 10:19:36.872528565 +0100
+@@ -0,0 +1,3 @@
++[global]
++extra-index-url=https://www.piwheels.org/simple
++find-links=/opt/wheels
+diff -ruN rasa-1.10.16/pyproject.toml rasa-1.10.16-2/pyproject.toml
+--- rasa-1.10.16/pyproject.toml	2020-07-02 11:19:23.000000000 +0100
++++ rasa-1.10.16-2/pyproject.toml	2020-07-05 10:19:36.872528565 +0100
+@@ -114,7 +114,7 @@
+ psycopg2-binary = "~2.8.2"
+ PyJWT = "~1.7"
+ python-dateutil = "~2.8"
+-tensorflow = "~2.1"
++tensorflow = "2.1.0"
+ tensorflow_hub = ">=0.7,<0.9"
+ tensorflow-addons = "^0.7.1"
+ tensorflow-estimator = "2.1.0"
